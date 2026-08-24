@@ -6,8 +6,24 @@
 build/
 pubspec.lock
 
-# Native platform folders are regenerated with `flutter create .` (see README)
-android/
+# Native platform - regenerated with `flutter create .` (see README)
+# But we keep the icon resources
+android/app/build/
+android/.gradle/
+android/gradle/
+android/gradlew
+android/gradlew.bat
+android/local.properties
+android/app/src/main/kotlin/
+android/app/src/main/res/values/
+android/app/src/main/res/drawable/
+android/app/src/main/AndroidManifest.xml
+android/app/build.gradle
+android/app/src/debug/
+android/app/src/profile/
+android/build.gradle
+android/settings.gradle
+android/gradle.properties
 ios/
 linux/
 macos/

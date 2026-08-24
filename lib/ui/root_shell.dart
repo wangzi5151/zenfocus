@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/strings.dart';
 import 'screens/home_screen.dart';
+import 'screens/history_screen.dart';
 import 'screens/stats_screen.dart';
 import 'screens/achievements_screen.dart';
 import 'screens/settings_screen.dart';
@@ -18,6 +19,7 @@ class _RootShellState extends State<RootShell> {
   Widget build(BuildContext context) {
     final pages = const [
       HomeScreen(),
+      HistoryScreen(),
       StatsScreen(),
       AchievementsScreen(),
       SettingsScreen(),
@@ -33,6 +35,11 @@ class _RootShellState extends State<RootShell> {
             icon: const Icon(Icons.timer_outlined),
             selectedIcon: const Icon(Icons.timer),
             label: tr('专注', 'Focus'),
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.history_outlined),
+            selectedIcon: const Icon(Icons.history),
+            label: tr('记录', 'History'),
           ),
           NavigationDestination(
             icon: const Icon(Icons.bar_chart_outlined),

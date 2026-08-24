@@ -6,7 +6,7 @@ import 'noise_player.dart';
 import 'settings_provider.dart';
 import 'stats_store.dart';
 
-enum Phase { focus, rest }
+enum Phase { focus, rest, longRest }
 
 class TimerEngine extends ChangeNotifier {
   TimerEngine(this.settings, this.stats);
@@ -16,12 +16,34 @@ class TimerEngine extends ChangeNotifier {
   Phase phase = Phase.focus;
   bool running = false;
   int remaining = 25 * 60;
+  int sessionCount = 0;
   Timer? _ticker;
 
-  int get total =>
-      (phase == Phase.focus ? settings.focusMin : settings.breakMin) * 60;
+  int get total {
+    switch (phase) {
+      case Phase.focus:
+        return settings.focusMin * 60;
+      case Phase.rest:
+        return settings.breakMin * 60;
+      case Phase.longRest:
+        return settings.longBreakMin * 60;
+    }
+  }
+
   double get progress => total == 0 ? 0 : 1 - remaining / total;
   bool get isFocus => phase == Phase.focus;
+  bool get isLongRest => phase == Phase.longRest;
+
+  String get phaseLabel {
+    switch (phase) {
+      case Phase.focus:
+        return tr('专注中', 'Focus');
+      case Phase.rest:
+        return tr('休息中', 'Break');
+      case Phase.longRest:
+        return tr('长休息', 'Long Break');
+    }
+  }
 
   void syncIdleDuration() {
     if (!running) {
@@ -81,19 +103,30 @@ class TimerEngine extends ChangeNotifier {
     if (isFocus) {
       if (counted) {
         stats.addSession(settings.focusMin);
+        sessionCount++;
       }
       NotificationService.instance.show(
         tr('专注完成', 'Focus complete'),
         tr('干得漂亮，休息一下吧', 'Well done. Time for a break.'),
       );
-      HapticFeedback.heavyImpact();
-      phase = Phase.rest;
+      if (settings.vibrateOnComplete) {
+        HapticFeedback.heavyImpact();
+      }
+
+      if (sessionCount > 0 &&
+          sessionCount % settings.sessionsBeforeLongBreak == 0) {
+        phase = Phase.longRest;
+      } else {
+        phase = Phase.rest;
+      }
     } else {
       NotificationService.instance.show(
         tr('休息结束', 'Break over'),
         tr('准备好开始下一轮专注了吗', 'Ready for the next round?'),
       );
-      HapticFeedback.mediumImpact();
+      if (settings.vibrateOnComplete) {
+        HapticFeedback.mediumImpact();
+      }
       phase = Phase.focus;
     }
 
@@ -109,6 +142,9 @@ class TimerEngine extends ChangeNotifier {
   }
 
   void _updateNoise() {
-    NoisePlayer.instance.setEnabled(running && settings.noiseOn);
+    NoisePlayer.instance.setEnabled(
+      running && settings.noiseOn,
+      sound: settings.soundType,
+    );
   }
 }

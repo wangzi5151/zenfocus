@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'app.dart';
@@ -19,7 +18,10 @@ Future<void> main() async {
 
   final engine = TimerEngine(settings, stats);
 
-  S.init(settings.langPref, WidgetsBinding.instance.platformDispatcher.locale);
+  S.init(
+    settings.langPref,
+    WidgetsBinding.instance.platformDispatcher.locale,
+  );
 
   await NotificationService.instance.init();
 

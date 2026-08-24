@@ -5,20 +5,27 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../core/strings.dart';
 import '../../services/stats_store.dart';
 
-class StatsScreen extends StatelessWidget {
+class StatsScreen extends StatefulWidget {
   const StatsScreen({super.key});
+  @override
+  State<StatsScreen> createState() => _StatsScreenState();
+}
+
+class _StatsScreenState extends State<StatsScreen> {
+  bool _showWeekly = true;
 
   @override
   Widget build(BuildContext context) {
     final stats = context.watch<StatsStore>();
     final scheme = Theme.of(context).colorScheme;
-    final last7 = stats.last7Days();
-    final rawMax = last7.isEmpty
+
+    final data = _showWeekly ? stats.last7Days() : stats.last30Days();
+    final rawMax = data.isEmpty
         ? 1
-        : last7.map((e) => e.value).reduce((a, b) => a > b ? a : b);
+        : data.map((e) => e.value).reduce((a, b) => a > b ? a : b);
     final maxY = math.max(30, ((rawMax + 29) ~/ 30) * 30).toDouble();
 
-    const zhLabels = ['一', '二', '三', '四', '五', '六', '日'];
+    const zhWeekLabels = ['一', '二', '三', '四', '五', '六', '日'];
 
     final cards = [
       _statCard(
@@ -36,7 +43,7 @@ class StatsScreen extends StatelessWidget {
       _statCard(
         context,
         tr('连击', 'Streak'),
-        '${stats.streak()} ${tr('天', 'days')}',
+        '${stats.streak()} ${tr('天', 'd')}',
         Icons.emoji_events,
       ),
     ];
@@ -53,25 +60,54 @@ class StatsScreen extends StatelessWidget {
             Expanded(child: cards[2]),
           ],
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            _summaryChip(
+                context, tr('本周', 'Week'), '${stats.weekMinutes()} ${tr('分钟', 'min')}', scheme.primary),
+            const SizedBox(width: 8),
+            _summaryChip(
+                context, tr('本月', 'Month'), '${stats.monthMinutes()} ${tr('分钟', 'min')}', scheme.tertiary),
+          ],
+        ),
+        const SizedBox(height: 20),
         Card(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  tr('最近 7 天', 'Last 7 days'),
-                  style: Theme.of(context).textTheme.titleMedium,
+                Row(
+                  children: [
+                    Text(
+                      tr('专注时长', 'Focus time'),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const Spacer(),
+                    SegmentedButton<bool>(
+                      segments: [
+                        ButtonSegment(
+                            value: true, label: Text(tr('周', 'Week'))),
+                        ButtonSegment(
+                            value: false, label: Text(tr('月', 'Month'))),
+                      ],
+                      selected: {_showWeekly},
+                      onSelected: (s) => setState(() => _showWeekly = s.first),
+                      style: ButtonStyle(
+                        visualDensity: VisualDensity.compact,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
                 SizedBox(
-                  height: 220,
+                  height: 200,
                   child: BarChart(
                     BarChartData(
                       maxY: maxY,
-                      barGroups: List.generate(7, (i) {
-                        final day = last7[i].key;
+                      barGroups: List.generate(data.length, (i) {
+                        final day = data[i].key;
                         final now = DateTime.now();
                         final isToday = day.year == now.year &&
                             day.month == now.month &&
@@ -80,9 +116,9 @@ class StatsScreen extends StatelessWidget {
                           x: i,
                           barRods: [
                             BarChartRodData(
-                              toY: last7[i].value.toDouble(),
-                              width: 16,
-                              borderRadius: BorderRadius.circular(6),
+                              toY: data[i].value.toDouble(),
+                              width: _showWeekly ? 16 : 6,
+                              borderRadius: BorderRadius.circular(4),
                               color: isToday
                                   ? scheme.tertiary
                                   : scheme.primary.withOpacity(0.7),
@@ -106,16 +142,30 @@ class StatsScreen extends StatelessWidget {
                             reservedSize: 24,
                             getTitlesWidget: (v, _) {
                               final idx = v.toInt();
-                              if (idx < 0 || idx >= 7) {
+                              if (idx < 0 || idx >= data.length) {
                                 return const SizedBox.shrink();
                               }
-                              return Padding(
-                                padding: const EdgeInsets.only(top: 8),
-                                child: Text(
-                                  zhLabels[day.weekday - 1],
-                                  style: Theme.of(context).textTheme.labelSmall,
-                                ),
-                              );
+                              if (_showWeekly) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Text(
+                                    zhWeekLabels[data[idx].key.weekday - 1],
+                                    style:
+                                        Theme.of(context).textTheme.labelSmall,
+                                  ),
+                                );
+                              }
+                              if (idx % 5 == 0 || idx == data.length - 1) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Text(
+                                    '${data[idx].key.month}/${data[idx].key.day}',
+                                    style:
+                                        Theme.of(context).textTheme.labelSmall,
+                                  ),
+                                );
+                              }
+                              return const SizedBox.shrink();
                             },
                           ),
                         ),
@@ -136,16 +186,52 @@ class StatsScreen extends StatelessWidget {
     );
   }
 
+  Widget _summaryChip(
+      BuildContext context, String label, String value, Color color) {
+    return Expanded(
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+          child: Row(
+            children: [
+              Container(
+                width: 4,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label,
+                      style: Theme.of(context).textTheme.labelSmall),
+                  Text(value,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _statCard(
       BuildContext context, String title, String value, IconData icon) {
     final scheme = Theme.of(context).colorScheme;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
         child: Column(
           children: [
-            Icon(icon, color: scheme.primary, size: 28),
-            const SizedBox(height: 8),
+            Icon(icon, color: scheme.primary, size: 26),
+            const SizedBox(height: 6),
             Text(
               value,
               style: Theme.of(context)
@@ -154,10 +240,7 @@ class StatsScreen extends StatelessWidget {
                   ?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 2),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.labelSmall,
-            ),
+            Text(title, style: Theme.of(context).textTheme.labelSmall),
           ],
         ),
       ),

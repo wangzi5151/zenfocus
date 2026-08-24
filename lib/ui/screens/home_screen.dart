@@ -10,6 +10,22 @@ import '../widgets/circle_timer_painter.dart';
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
+  static const _soundIcons = {
+    AmbientSound.brownNoise: Icons.noise_aware,
+    AmbientSound.whiteNoise: Icons.graphic_eq,
+    AmbientSound.rain: Icons.cloud,
+    AmbientSound.forest: Icons.forest,
+    AmbientSound.deepFocus: Icons.meditation,
+  };
+
+  static const _soundLabels = {
+    AmbientSound.brownNoise: ('棕噪', 'Brown'),
+    AmbientSound.whiteNoise: ('白噪', 'White'),
+    AmbientSound.rain: ('雨声', 'Rain'),
+    AmbientSound.forest: ('森林', 'Forest'),
+    AmbientSound.deepFocus: ('深潜', 'Deep'),
+  };
+
   @override
   Widget build(BuildContext context) {
     final engine = context.watch<TimerEngine>();
@@ -35,7 +51,8 @@ class HomeScreen extends StatelessWidget {
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: scheme.secondaryContainer,
                     borderRadius: BorderRadius.circular(12),
@@ -47,10 +64,11 @@ class HomeScreen extends StatelessWidget {
                           size: 16, color: scheme.onSecondaryContainer),
                       const SizedBox(width: 4),
                       Text(
-                        '${stats.streak()} ${tr('天连击', 'days')}',
-                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                              color: scheme.onSecondaryContainer,
-                            ),
+                        '${stats.streak()} ${tr('天', 'd')}',
+                        style:
+                            Theme.of(context).textTheme.labelMedium?.copyWith(
+                                  color: scheme.onSecondaryContainer,
+                                ),
                       ),
                     ],
                   ),
@@ -58,6 +76,16 @@ class HomeScreen extends StatelessWidget {
               ],
             ),
           ),
+          if (engine.sessionCount > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                '${tr('本轮', 'This run')}: ${engine.sessionCount} ${tr('个番茄', 'pomodoros')}',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+              ),
+            ),
           Expanded(
             child: Center(
               child: SizedBox(
@@ -67,7 +95,11 @@ class HomeScreen extends StatelessWidget {
                   painter: DialPainter(
                     progress: engine.progress,
                     isFocus: engine.isFocus,
-                    color: scheme.primary,
+                    color: engine.isLongRest
+                        ? scheme.tertiary
+                        : engine.isFocus
+                            ? scheme.primary
+                            : scheme.secondary,
                     trackColor: scheme.surfaceContainerHighest,
                   ),
                   child: Center(
@@ -75,14 +107,13 @@ class HomeScreen extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          engine.isFocus
-                              ? tr('专注中', 'Focus')
-                              : tr('休息中', 'Break'),
-                          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                                color: engine.isFocus
-                                    ? scheme.primary
-                                    : scheme.tertiary,
-                              ),
+                          engine.phaseLabel,
+                          style:
+                              Theme.of(context).textTheme.labelLarge?.copyWith(
+                                    color: engine.isFocus
+                                        ? scheme.primary
+                                        : scheme.tertiary,
+                                  ),
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -113,7 +144,8 @@ class HomeScreen extends StatelessWidget {
                   minimumSize: const Size(140, 52),
                 ),
                 onPressed: engine.toggle,
-                icon: Icon(engine.running ? Icons.pause : Icons.play_arrow),
+                icon:
+                    Icon(engine.running ? Icons.pause : Icons.play_arrow),
                 label: Text(
                   engine.running ? tr('暂停', 'Pause') : tr('开始', 'Start'),
                 ),
@@ -128,14 +160,50 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(height: 16),
           SwitchListTile(
             secondary: const Icon(Icons.music_note),
-            title: Text(tr('环境白噪音', 'Ambient noise')),
+            title: Text(tr('环境音效', 'Ambient sound')),
             value: settings.noiseOn,
             onChanged: (v) {
               settings.setNoise(v);
               engine.refreshNoise();
             },
           ),
-          if (settings.noiseOn)
+          if (settings.noiseOn) ...[
+            SizedBox(
+              height: 48,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                children: AmbientSound.values.map((s) {
+                  final selected = settings.soundType == s;
+                  final labels = _soundLabels[s]!;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: FilterChip(
+                      selected: selected,
+                      avatar: Icon(
+                        _soundIcons[s],
+                        size: 18,
+                        color: selected
+                            ? scheme.onPrimaryContainer
+                            : scheme.onSurfaceVariant,
+                      ),
+                      label: Text(
+                        labels.$1,
+                        style: TextStyle(
+                          color: selected
+                              ? scheme.onPrimaryContainer
+                              : scheme.onSurface,
+                        ),
+                      ),
+                      onSelected: (_) {
+                        settings.setSoundType(s);
+                        NoisePlayer.instance.setSound(s);
+                      },
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Row(
@@ -156,6 +224,7 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
             ),
+          ],
           Padding(
             padding: const EdgeInsets.fromLTRB(32, 8, 32, 16),
             child: Column(

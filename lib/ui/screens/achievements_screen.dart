@@ -58,6 +58,14 @@ final List<Achievement> _achievements = [
     unlocked: (s) => s.totalMinutes >= 60,
   ),
   Achievement(
+    titleZh: '半日修行',
+    titleEn: 'Half Day',
+    descZh: '累计专注 3 小时',
+    descEn: 'Reach 3 hours total',
+    icon: Icons.wb_sunny,
+    unlocked: (s) => s.totalMinutes >= 180,
+  ),
+  Achievement(
     titleZh: '一日五餐',
     titleEn: 'Five a Day',
     descZh: '单日完成 5 次专注',
@@ -73,6 +81,30 @@ final List<Achievement> _achievements = [
     icon: Icons.calendar_month,
     unlocked: (s) => s.streak() >= 7,
   ),
+  Achievement(
+    titleZh: '十四日坚守',
+    titleEn: 'Two Week Strong',
+    descZh: '连续 14 天专注',
+    descEn: '14-day streak',
+    icon: Icons.diamond,
+    unlocked: (s) => s.streak() >= 14,
+  ),
+  Achievement(
+    titleZh: '月度达人',
+    titleEn: 'Monthly Master',
+    descZh: '连续 30 天专注',
+    descEn: '30-day streak',
+    icon: Icons.workspace_premium,
+    unlocked: (s) => s.streak() >= 30,
+  ),
+  Achievement(
+    titleZh: '十万小时',
+    titleEn: '10K Hours (lie)',
+    descZh: '累计专注 100 小时',
+    descEn: 'Reach 100 hours total',
+    icon: Icons.star,
+    unlocked: (s) => s.totalMinutes >= 6000,
+  ),
 ];
 
 class AchievementsScreen extends StatelessWidget {
@@ -82,16 +114,36 @@ class AchievementsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final stats = context.watch<StatsStore>();
     final scheme = Theme.of(context).colorScheme;
+    final unlocked = _achievements.where((a) => a.unlocked(stats)).length;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
       children: [
-        Text(
-          tr('成就', 'Achievements'),
-          style: Theme.of(context)
-              .textTheme
-              .headlineSmall
-              ?.copyWith(fontWeight: FontWeight.bold),
+        Row(
+          children: [
+            Text(
+              tr('成就', 'Achievements'),
+              style: Theme.of(context)
+                  .textTheme
+                  .headlineSmall
+                  ?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const Spacer(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: scheme.primaryContainer,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '$unlocked/${_achievements.length}',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: scheme.onPrimaryContainer,
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         GridView.count(
@@ -100,7 +152,7 @@ class AchievementsScreen extends StatelessWidget {
           physics: const NeverScrollableScrollPhysics(),
           mainAxisSpacing: 8,
           crossAxisSpacing: 8,
-          childAspectRatio: 0.85,
+          childAspectRatio: 0.82,
           children: _achievements.map((a) {
             final done = a.unlocked(stats);
             return Card(
@@ -110,7 +162,7 @@ class AchievementsScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     CircleAvatar(
-                      radius: 24,
+                      radius: 22,
                       backgroundColor: done
                           ? scheme.primaryContainer
                           : scheme.surfaceContainerHighest,
@@ -118,7 +170,8 @@ class AchievementsScreen extends StatelessWidget {
                         a.icon,
                         color: done
                             ? scheme.onPrimaryContainer
-                            : scheme.onSurfaceVariant.withOpacity(0.5),
+                            : scheme.onSurfaceVariant.withOpacity(0.4),
+                        size: 22,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -126,6 +179,7 @@ class AchievementsScreen extends StatelessWidget {
                       a.title(),
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.bold,
+                            fontSize: 13,
                           ),
                       textAlign: TextAlign.center,
                     ),
@@ -134,6 +188,7 @@ class AchievementsScreen extends StatelessWidget {
                       a.desc(),
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             color: scheme.onSurfaceVariant,
+                            fontSize: 11,
                           ),
                       textAlign: TextAlign.center,
                       maxLines: 2,

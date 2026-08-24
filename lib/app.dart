@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'core/theme.dart';
 import 'services/settings_provider.dart';
 import 'ui/root_shell.dart';
+import 'ui/screens/onboarding_screen.dart';
 
 class ZenFocusApp extends StatelessWidget {
   const ZenFocusApp({
@@ -32,7 +33,9 @@ class ZenFocusApp extends StatelessWidget {
             theme: buildTheme(Brightness.light),
             darkTheme: buildTheme(Brightness.dark),
             themeMode: settings.themeMode,
-            home: const RootShell(),
+            home: settings.onboarded
+                ? const RootShell()
+                : const OnboardingScreen(),
           );
         },
       ),
