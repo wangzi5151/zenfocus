@@ -92,7 +92,7 @@ class _StatsScreenState extends State<StatsScreen> {
                             value: false, label: Text(tr('月', 'Month'))),
                       ],
                       selected: {_showWeekly},
-                      onSelected: (s) => setState(() => _showWeekly = s.first),
+                      onSelectionChanged: (s) => setState(() => _showWeekly = s.first),
                       style: ButtonStyle(
                         visualDensity: VisualDensity.compact,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
