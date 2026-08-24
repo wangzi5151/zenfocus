@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../core/strings.dart';
-import '../services/settings_provider.dart';
+import '../../core/strings.dart';
+import '../../services/settings_provider.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
