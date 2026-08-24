@@ -15,7 +15,7 @@ class HomeScreen extends StatelessWidget {
     AmbientSound.whiteNoise: Icons.graphic_eq,
     AmbientSound.rain: Icons.cloud,
     AmbientSound.forest: Icons.forest,
-    AmbientSound.deepFocus: Icons.meditation,
+    AmbientSound.deepFocus: Icons.psychology,
   };
 
   static const _soundLabels = {
