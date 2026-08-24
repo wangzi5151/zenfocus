@@ -1,0 +1,25 @@
+# Flutter/Dart
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+pubspec.lock
+
+# Native platform folders are regenerated with `flutter create .` (see README)
+android/
+ios/
+linux/
+macos/
+windows/
+web/
+.metadata
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Misc
+*.log
+.DS_Store
