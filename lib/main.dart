@@ -16,7 +16,11 @@ Future<void> main() async {
   final stats = StatsStore();
   await stats.load();
 
-  final engine = TimerEngine(settings, stats);
+  final engine = TimerEngine(
+    settings,
+    stats,
+    store: TimerStateStore(),
+  );
 
   S.init(
     settings.langPref,
@@ -24,6 +28,8 @@ Future<void> main() async {
   );
 
   await NotificationService.instance.init();
+  await engine.restore();
+  engine.attachLifecycle();
 
   runApp(
     ZenFocusApp(settings: settings, stats: stats, engine: engine),

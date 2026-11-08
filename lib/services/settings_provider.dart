@@ -37,20 +37,30 @@ class SettingsProvider extends ChangeNotifier {
 
   Future<void> load() async {
     _p = await SharedPreferences.getInstance();
-    focusMin = _p!.getInt(_kFocus) ?? 25;
-    breakMin = _p!.getInt(_kBreak) ?? 5;
-    longBreakMin = _p!.getInt(_kLongBreak) ?? 15;
-    sessionsBeforeLongBreak = _p!.getInt(_kSessionsBeforeLB) ?? 4;
-    dailyGoalSessions = _p!.getInt(_kGoal) ?? 8;
-    themeMode = ThemeMode.values[_p!.getInt(_kTheme) ?? 0];
+    focusMin = (_p!.getInt(_kFocus) ?? 25).clamp(5, 90).toInt();
+    breakMin = (_p!.getInt(_kBreak) ?? 5).clamp(1, 30).toInt();
+    longBreakMin = (_p!.getInt(_kLongBreak) ?? 15).clamp(5, 45).toInt();
+    sessionsBeforeLongBreak =
+        (_p!.getInt(_kSessionsBeforeLB) ?? 4).clamp(2, 8).toInt();
+    dailyGoalSessions = (_p!.getInt(_kGoal) ?? 8).clamp(1, 16).toInt();
+    themeMode = _enumAt(ThemeMode.values, _p!.getInt(_kTheme), 0);
     autoStart = _p!.getBool(_kAuto) ?? false;
     noiseOn = _p!.getBool(_kNoise) ?? true;
-    noiseVolume = _p!.getDouble(_kVol) ?? 0.8;
-    soundType = AmbientSound.values[_p!.getInt(_kSound) ?? 0];
+    noiseVolume = (_p!.getDouble(_kVol) ?? 0.8).clamp(0.0, 1.0).toDouble();
+    soundType = _enumAt(AmbientSound.values, _p!.getInt(_kSound), 0);
     onboarded = _p!.getBool(_kOnboarded) ?? false;
     vibrateOnComplete = _p!.getBool(_kVibrate) ?? true;
-    S.pref = Lang.values[_p!.getInt(_kLang) ?? 0];
+    S.pref = _enumAt(Lang.values, _p!.getInt(_kLang), 0);
     notifyListeners();
+  }
+
+  /// Returns a valid enum value even when persisted data is corrupt or was
+  /// written by a newer version with more enum members.
+  static T _enumAt<T>(List<T> values, int? index, int fallback) {
+    if (index == null || index < 0 || index >= values.length) {
+      return values[fallback];
+    }
+    return values[index];
   }
 
   void completeOnboarding() {

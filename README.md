@@ -15,6 +15,7 @@ Open-source, ad-free, fully offline cross-platform focus timer built with Flutte
 - **Material 3** — 动态取色、深色模式
 - **中英双语** — 完整的中英文支持，可跟随系统
 - **完全本地** — 无需账号、无需云同步，数据安全存储在本地
+- **数据导入/导出** — 一键复制 / 恢复 JSON 备份，换机不丢记录
 
 ## 下载 Download
 
@@ -72,7 +73,7 @@ flutter build apk --release
 - [ ] 更多环境音效（海浪、篝火、咖啡厅）
 - [ ] 主屏幕小组件
 - [ ] Wear OS 手表端
-- [ ] 数据导入/导出
+- [x] 数据导入/导出
 - [ ] 自定义音效导入
 - [ ] 专注时段标签（工作/学习/冥想等）
 

@@ -38,12 +38,12 @@ jobs:
 
       - name: Analyze
         run: flutter analyze
-        continue-on-error: true
 
       - name: Remove default test file
         run: rm -f test/widget_test.dart
 
-      - run: flutter test || true
+      - name: Test
+        run: flutter test
 
       - run: flutter build apk --release
 

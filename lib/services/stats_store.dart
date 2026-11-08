@@ -61,17 +61,83 @@ class StatsStore extends ChangeNotifier {
     }
   }
 
+  Map<String, dynamic> _snapshot() => {
+        'm': minutes,
+        's': sessions,
+        'tm': totalMinutes,
+        'ts': totalSessions,
+        'mx': maxSessionsPerDay,
+        'h': history.take(200).map((e) => e.toJson()).toList(),
+      };
+
   Future<void> _persist() async {
-    await _p?.setString(
-        _kKey,
-        jsonEncode({
-          'm': minutes,
-          's': sessions,
-          'tm': totalMinutes,
-          'ts': totalSessions,
-          'mx': maxSessionsPerDay,
-          'h': history.take(200).map((e) => e.toJson()).toList(),
-        }));
+    await _p?.setString(_kKey, jsonEncode(_snapshot()));
+  }
+
+  /// Serializes all statistics into a portable, versioned JSON document.
+  String exportJson() {
+    return jsonEncode({
+      'schema': 1,
+      'app': 'zenfocus',
+      'exportedAt': DateTime.now().toIso8601String(),
+      'stats': _snapshot(),
+    });
+  }
+
+  /// Replaces local statistics with a backup produced by [exportJson].
+  /// Returns false (leaving existing data untouched) when the payload is
+  /// malformed. Both wrapped and raw stat maps are accepted.
+  Future<bool> importJson(String raw) async {
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map<String, dynamic>) return false;
+      final wrapped = decoded['stats'];
+      final statsJson = wrapped is Map<String, dynamic> ? wrapped : decoded;
+
+      final rawMinutes = statsJson['m'];
+      final rawSessions = statsJson['s'];
+      if (rawMinutes is! Map || rawSessions is! Map) return false;
+
+      final newMinutes = <String, int>{};
+      for (final entry in rawMinutes.entries) {
+        final value = entry.value;
+        if (value is! num || value < 0) return false;
+        newMinutes[entry.key.toString()] = value.toInt();
+      }
+      final newSessions = <String, int>{};
+      for (final entry in rawSessions.entries) {
+        final value = entry.value;
+        if (value is! num || value < 0) return false;
+        newSessions[entry.key.toString()] = value.toInt();
+      }
+
+      final newHistory = <SessionRecord>[];
+      final rawHistory = statsJson['h'];
+      if (rawHistory is List) {
+        for (final item in rawHistory) {
+          if (item is Map<String, dynamic>) {
+            try {
+              newHistory.add(SessionRecord.fromJson(item));
+            } catch (_) {}
+          }
+        }
+      }
+
+      minutes = newMinutes;
+      sessions = newSessions;
+      totalMinutes = minutes.values.fold(0, (a, b) => a + b);
+      totalSessions = sessions.values.fold(0, (a, b) => a + b);
+      maxSessionsPerDay = sessions.values.isEmpty
+          ? 0
+          : sessions.values.reduce((a, b) => a > b ? a : b);
+      history = newHistory.take(200).toList();
+
+      await _persist();
+      notifyListeners();
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   static String keyOf(DateTime d) =>
